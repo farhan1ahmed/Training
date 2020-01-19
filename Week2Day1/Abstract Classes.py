@@ -5,12 +5,13 @@ class Book:
         self.author = author
         self.price = price
 
+    @abstractmethod
     def display(self):
         pass
 
 
 class MyBook(Book):
-    @abstractmethod
+
     def display(self):
         return"Tile: {}\nAuthor: {}\nPrice: {}".format(self.title, self.author, self.price)
 
