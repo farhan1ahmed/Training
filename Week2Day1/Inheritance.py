@@ -22,3 +22,4 @@ for case in range(cases):
     print(obj.add())
     print(obj.multiply())
     print(obj.taks())
+    print(obj.a)
