@@ -1,0 +1,5 @@
+sizeEng = int(input("Size of Set English: "))
+E = set(int(x) for x in input("Set English: ").split())
+sizeFre = int(input("Size of Set French: "))
+F = set(int(x) for x in input("Set French: ").split())
+print("Total: "+str(len(E.difference(F))))
