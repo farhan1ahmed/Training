@@ -17,10 +17,7 @@ def gridSearch(G, P):
         for i in range(G_col-P_col+1):
             j = 0
             while j < P_col:
-                print(row, end='')
-                print(i+j, end='')
-                print(prow, end='')
-                print(j)
+
                 if G[row][i+j] != P[prow][j]:
                     break
                 j += 1
