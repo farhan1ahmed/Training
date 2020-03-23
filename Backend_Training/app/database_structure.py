@@ -1,6 +1,7 @@
 from app import db
 from flask_login import UserMixin
 from app import login_manager
+from datetime import datetime
 
 
 @login_manager.user_loader
@@ -23,14 +24,14 @@ class TodoModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     Title = db.Column(db.String, unique=True, nullable=False)
     Description = db.Column(db.Text, unique=True, nullable=False)
-    Status = db.Column(db.String, unique=True, nullable=False)
+    Status = db.Column(db.String, unique=True, nullable=False, default='Not Started')
     _deleted = db.Column(db.Boolean, default=False)
-    CreationDate = db.Column(db.DateTime,  nullable=False, default='current_date')
+    CreationDate = db.Column(db.DateTime,  nullable=False, default=datetime.utcnow())
     DueDate = db.Column(db.DateTime, nullable=False)
-    CompletionDate = db.Column(db.DateTime, nullable=False)
+    CompletionDate = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
     userID = db.Column(db.Integer, db.ForeignKey('user_model.id'), nullable=False)
 
     def __repr__(self):
-        return f"""User('{self.Title}', '{self.Status}')"""
+        return f"""User('{self.Title}', '{self.Description}', '{self.Status}')"""
 
 

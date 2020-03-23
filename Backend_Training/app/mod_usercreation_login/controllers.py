@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, flash, redirect, url_for, request
 from .forms import UserRegistrationForm, UserLoginForm
 from app import bcrypt, db
-from app.database_structure import UserModel, TodoModel
+from app.database_structure import UserModel
 from flask_login import login_user as LogUserIn, current_user, logout_user
 
 
