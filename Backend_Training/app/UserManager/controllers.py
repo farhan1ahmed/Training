@@ -1,9 +1,8 @@
-from flask import Blueprint, redirect, url_for, request, Response, jsonify
+from flask import Blueprint, request, Response, jsonify
 from app import db
 from .email_confirmation import send_confirmation_email, confirm_email_token
 from app.database_structure import UserModel
 from flask_bcrypt import check_password_hash
-from flask_login import login_user as LogUserIn, current_user, logout_user
 from flask_jwt_extended import create_access_token
 import datetime
 
@@ -56,11 +55,4 @@ def confirm_user(token):
             db.session.add(user)
             db.session.commit()
             return Response('{"message":"You have confirmed successfully"}', status=201, mimetype='application/json')
-
-
-
-@UserManager.route("/logout")
-def logout():
-    logout_user()
-    return redirect(url_for('register.login_user'))
 

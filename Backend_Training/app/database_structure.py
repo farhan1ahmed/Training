@@ -1,7 +1,5 @@
-from app import db, bcrypt
+from app import db
 from flask_bcrypt import generate_password_hash
-from flask_login import UserMixin
-from app import login_manager
 from datetime import datetime
 
 
@@ -39,4 +37,11 @@ class TodoModel(db.Model):
     def __repr__(self):
         return f"""Task('{self.Title}', '{self.Description}', '{self.Status}')"""
 
-
+    @property
+    def list_all(self):
+        return {
+            'id': self.id,
+            'Title': self.Title,
+            'Description': self.Description,
+            'userID': self.userID
+        }

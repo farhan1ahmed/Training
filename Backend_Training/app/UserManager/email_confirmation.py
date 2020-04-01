@@ -2,8 +2,6 @@ from itsdangerous import URLSafeTimedSerializer
 from app import app, mail
 from flask import url_for
 from flask_mail import Message
-from functools import wraps
-
 
 def generate_email_token(email):
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])

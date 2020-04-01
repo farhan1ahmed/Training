@@ -19,9 +19,9 @@ login_manager.login_message_category = 'info'
 mail = Mail(app)
 jwt= JWTManager(app)
 
-from app.TasksManager.controllers import mod_webapp
+from app.TasksManager.controllers import TasksManager
 from app.UserManager.controllers import UserManager
-app.register_blueprint(mod_webapp)
+app.register_blueprint(TasksManager)
 app.register_blueprint(UserManager)
 
 db.create_all()
