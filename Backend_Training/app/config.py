@@ -1,11 +1,12 @@
 import os
 class BaseConfig(object):
     DEBUG = True
-    CSRF_ENABLED = True
-    CSRF_SESSION_KEY = "secret"
-    SECRET_KEY = b'5791628bb0b13ce0c676dfde280ba245'
-    PASSWORD_SALT = b'6dfde280ba245'
-    JWT_TOKEN = 't1NP63m4wnBg6nyHYKfmc2TpCOGI4nss'
+    SERVER_NAME = '127.0.0.1:5000'
+    SESSION_COOKIE_DOMAIN = False
+
+    SECRET_KEY = os.environ['SECRET_KEY']
+    PASSWORD_SALT = os.environ['PASSWORD_SALT']
+    JWT_TOKEN = os.environ['JWT_TOKEN']
     SQLALCHEMY_DATABASE_URI = 'sqlite:///todo.db'
 
     #Mail Setting

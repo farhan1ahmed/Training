@@ -6,7 +6,6 @@ from flask_mail import Mail
 from flask_jwt_extended import JWTManager
 import os
 
-
 app = Flask(__name__)
 db = SQLAlchemy(app)
 
@@ -17,11 +16,20 @@ login_manager.init_app(app)
 login_manager.login_view = 'register.login_user'
 login_manager.login_message_category = 'info'
 mail = Mail(app)
-jwt= JWTManager(app)
+jwt = JWTManager(app)
 
-from app.TasksManager.controllers import TasksManager
-from app.UserManager.controllers import UserManager
-app.register_blueprint(TasksManager)
-app.register_blueprint(UserManager)
+status_codes = {
+    "SUCCESS": 200,
+    "CREATED": 201,
+    "UNAUTHORIZED": 401,
+    "FORBIDDEN": 403,
+    "NOT FOUND": 404
+}
+
+from app.tasks.controllers import tasks
+from app.users.controllers import users
+app.register_blueprint(tasks)
+app.register_blueprint(users)
 
 db.create_all()
+
