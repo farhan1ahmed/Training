@@ -8,10 +8,9 @@ class TodoModel(db.Model):
     Title = db.Column(db.String, nullable=False)
     Description = db.Column(db.Text, nullable=False)
     Status = db.Column(db.String, nullable=False, default='Not Started')
-    _deleted = db.Column(db.Boolean, default=False)
     CreationDate = db.Column(db.DateTime,  nullable=False, default=datetime.utcnow())
     DueDate = db.Column(db.DateTime, nullable=False)
-    CompletionDate = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
+    CompletionDate = db.Column(db.DateTime, nullable=True)
     userID = db.Column(db.Integer, db.ForeignKey('user_model.id'), nullable=False)
 
 
@@ -24,5 +23,8 @@ class TodoModel(db.Model):
             'id': self.id,
             'Title': self.Title,
             'Description': self.Description,
-            'userID': self.userID
+            'userID': self.userID,
+            'Status': self.Status,
+            'CompletionDate': self.CompletionDate,
+            'DueDate': self.DueDate
         }

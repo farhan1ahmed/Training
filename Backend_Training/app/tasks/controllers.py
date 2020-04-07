@@ -34,7 +34,15 @@ def list_item(item_id):
     return ToDoService().list_item(item_id)
 
 
-@tasks.route("/delete/<item_id>")
+@tasks.route("/delete/<item_id>", methods=['DELETE'])
 @jwt_required_and_not_blacklisted
 def delete_item(item_id):
     return ToDoService().delete_item(item_id)
+
+
+@tasks.route("/update/<item_id>", methods=['PUT'])
+@jwt_required_and_not_blacklisted
+def update_item(item_id):
+    request_body = request.get_json()
+    return ToDoService().update_item(item_id, request_body)
+
