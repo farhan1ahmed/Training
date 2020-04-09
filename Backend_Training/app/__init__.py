@@ -18,14 +18,6 @@ login_manager.login_message_category = 'info'
 mail = Mail(app)
 jwt = JWTManager(app)
 
-status_codes = {
-    "SUCCESS": 200,
-    "CREATED": 201,
-    "UNAUTHORIZED": 401,
-    "FORBIDDEN": 403,
-    "NOT FOUND": 404
-}
-
 from app.tasks.controllers import tasks
 from app.users.controllers import users
 app.register_blueprint(tasks)

@@ -1,28 +1,33 @@
 from flask import Blueprint, request
-from .service import UserService, jwt_required_and_not_blacklisted
+from app.users import service
+from .service import jwt_required_and_not_blacklisted, print_func_name
 
 
-users = Blueprint('register', __name__)
+users = Blueprint('user', __name__)
 @users.route("/register", methods=['POST'])
+@print_func_name
 def register_user():
     request_body = request.get_json()
-    return UserService().register_user(request_body)
+    return service.register_user(request_body)
 
 
 @users.route("/login", methods=['GET', 'POST'])
+@print_func_name
 def login_user():
     request_body = request.get_json()
-    return UserService().login_user(request_body)
+    return service.login_user(request_body)
 
 
 @users.route("/confirm/<token>", methods=['GET'])
+@print_func_name
 def confirm_user(token):
     status = request.get_json()
-    return UserService().confirm_user(token, status)
+    return service.confirm_user(token, status)
 
 
 @users.route("/logout", methods=['GET', 'POST'])
+@print_func_name
 @jwt_required_and_not_blacklisted
 def logout_user():
     token = request.headers.get('Authorization').split(" ")[1]
-    return UserService().logout_user(token)
+    return service.logout_user(token)
