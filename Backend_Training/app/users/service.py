@@ -1,7 +1,7 @@
 from flask import Response, url_for, request
 import datetime
 from flask_bcrypt import check_password_hash
-from flask_jwt_extended import create_access_token, verify_jwt_in_request
+from flask_jwt_extended import create_access_token, verify_jwt_in_request, set_access_cookies
 from .models import UserModel, BlackList
 from app import app, db, mail, utils
 from itsdangerous import URLSafeTimedSerializer
@@ -10,12 +10,11 @@ from functools import wraps
 
 secret_key = 'SECRET_KEY'
 password_salt = 'PASSWORD_SALT'
-default_mail_sender = 'DEFAULT MAIL SENDER'
+default_mail_sender = 'DEFAULT_MAIL_SENDER'
 email_link_expiry = 3600  #seconds
 user_name = 'username'
 pass_word = 'password'
 email = 'email'
-status = 'status'
 status_cancel = 'cancel'
 status_confirm = 'confirm'
 
@@ -27,7 +26,7 @@ def generate_email_token(email):
 
 def send_confirmation_email(email):
     confirm_url = url_for('user.confirm_user', token=generate_email_token(email), _external=True)
-    msg = Message(subject='ToDo App: Confirm your Email', body=confirm_url, recipients=[email], sender=app.config.get(default_mail_sender))
+    msg = Message(subject='ToDo App: Confirm your Email', body=confirm_url, recipients=[email], sender=default_mail_sender)
     mail.send(msg)
 
 #Decorator Function to verify JWT token and BlackList Table
@@ -71,7 +70,9 @@ def login_user(request_body):
     life = datetime.timedelta(days=1)
     access_token = create_access_token(identity=str(user.id), expires_delta=life)
     res = Response('{"message": "Success"}', status=utils.OK, mimetype='application/json')
+    #set_access_cookies(res, access_token)
     res.set_cookie("access_token_cookie", value=access_token)
+    res.set_cookie("csrf_access_token", value=app.config.get(secret_key))
     return res
 
 def confirm_user(token, status):
@@ -82,11 +83,11 @@ def confirm_user(token, status):
         print(e)
         return Response(f'{{"message": "{e}"}}', status=utils.SERVER_ERROR, mimetype='application/json')
     user = UserModel.query.filter_by(email=email).first()
-    if status.get(status) == status_cancel:
+    if status == status_cancel:
         db.session.delete(user)
         db.session.commit()
         return Response('{"message":"User deleted successfully"}', status=utils.NOT_FOUND, mimetype='application/json')
-    elif status.get(status) == status_confirm:
+    elif status == status_confirm:
         if user.confirmed:
             return Response('{"message":"User already confirmed"}', status=utils.OK, mimetype='application/json')
         else:
@@ -101,8 +102,9 @@ def logout_user(token):
     db.session.add(blacklist_this_token)
     db.session.commit()
     res = Response('{"message":"Logged Out successfully"}', status=utils.OK,
-                    mimetype='application/json')
+                   mimetype='application/json')
     res.delete_cookie('access_token_cookie')
+    res.delete_cookie('csrf_access_token')
     return res
 
 

@@ -15,6 +15,7 @@ def hello():
 @jwt_required_and_not_blacklisted
 def create():
     request_body = request.get_json()
+    print(request_body)
     return service.create(request_body)
 
 
@@ -45,4 +46,19 @@ def delete_item(item_id):
 def update_item(item_id):
     request_body = request.get_json()
     return service.update_item(item_id, request_body)
+
+
+@tasks.route("/upload/<item_id>", methods=['PUT'])
+@print_func_name
+@jwt_required_and_not_blacklisted
+def upload(item_id):
+    req_files = request.files.get('attachment')
+    return service.upload(item_id, req_files)
+
+
+@tasks.route("/download/<item_id>")
+@print_func_name
+@jwt_required_and_not_blacklisted
+def download(item_id):
+    return service.download(item_id)
 

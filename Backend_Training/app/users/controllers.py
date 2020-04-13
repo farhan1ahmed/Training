@@ -21,7 +21,7 @@ def login_user():
 @users.route("/confirm/<token>", methods=['GET'])
 @print_func_name
 def confirm_user(token):
-    status = request.get_json()
+    status = request.args.get('status')
     return service.confirm_user(token, status)
 
 
