@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from app.users import service
-from .service import jwt_required_and_not_blacklisted, print_func_name
+from app.utils.decorator_functions import jwt_required_and_not_blacklisted, print_func_name
 
 
 users = Blueprint('user', __name__)

@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from app.users.service import jwt_required_and_not_blacklisted, print_func_name
+from app.utils.decorator_functions import jwt_required_and_not_blacklisted, print_func_name
 from app.tasks import service
 
 tasks = Blueprint('webapp', __name__)
@@ -48,17 +48,24 @@ def update_item(item_id):
     return service.update_item(item_id, request_body)
 
 
-@tasks.route("/upload/<item_id>", methods=['PUT'])
+@tasks.route("/upload_attachment/<item_id>", methods=['PUT'])
 @print_func_name
 @jwt_required_and_not_blacklisted
-def upload(item_id):
+def upload_attachment(item_id):
     req_files = request.files.get('attachment')
-    return service.upload(item_id, req_files)
+    return service.upload_attachment(item_id, req_files)
 
 
-@tasks.route("/download/<item_id>")
+@tasks.route("/download_attachment/<item_id>")
 @print_func_name
 @jwt_required_and_not_blacklisted
-def download(item_id):
-    return service.download(item_id)
+def download_attachment(item_id):
+    return service.download_attachment(item_id)
+
+
+@tasks.route("/delete_attachment/<item_id>", methods=['DELETE'])
+@print_func_name
+@jwt_required_and_not_blacklisted
+def delete_attachment(item_id):
+    return service.delete_attachment(item_id)
 

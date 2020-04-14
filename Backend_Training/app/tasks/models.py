@@ -12,7 +12,7 @@ class TodoModel(db.Model):
     DueDate = db.Column(db.DateTime, nullable=False)
     CompletionDate = db.Column(db.DateTime, nullable=True)
     Attachment_name = db.Column(db.String, nullable=True)
-    Attachment_data = db.Column(db.LargeBinary, nullable=True)
+    Attachment_data = db.Column(db.String, nullable=True)
     userID = db.Column(db.Integer, db.ForeignKey('user_model.id'), nullable=False)
 
     def __repr__(self):
