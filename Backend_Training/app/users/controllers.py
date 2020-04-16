@@ -31,3 +31,18 @@ def confirm_user(token):
 def logout_user():
     token = request.headers.get('Authorization').split(" ")[1]
     return service.logout_user(token)
+
+
+@users.route("/forgot_password", methods={'GET', 'POST'})
+@print_func_name
+def forgot_password():
+    request_body = request.get_json()
+    return service.forgot_password(request_body)
+
+
+@users.route("/reset_password/<resettoken>", methods={'GET', 'POST'})
+@print_func_name
+def reset_password(resettoken):
+    reset_token = resettoken
+    request_body = request.get_json()
+    return service.reset_password(request_body, reset_token)

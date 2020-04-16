@@ -93,5 +93,35 @@ def logout_user(token):
     return res
 
 
+def send_password_reset_email(email):
+    reset_url = url_for('user.reset_password', resettoken=generate_email_token(email), _external=True)
+    msg = Message(subject='ToDo App: Password Reset', body=reset_url, recipients=[email],
+                  sender=default_mail_sender)
+    mail.send(msg)
 
 
+def forgot_password(request_body):
+    user_email = request_body.get(email)
+    user = UserModel.query.filter_by(email=user_email).first()
+    if not user:
+        return Response('{"message":"No such Email registered in database"}', status=status_codes.NOT_FOUND, mimetype='application/json')
+    send_password_reset_email(user.email)
+    return Response('{"message":"success"}', status=status_codes.OK, mimetype='application/json')
+
+
+def reset_password(request_body, reset_token):
+    serializer = URLSafeTimedSerializer(app.config.get(secret_key))
+    try:
+        user_email = serializer.loads(reset_token, salt=app.config.get(password_salt), max_age=email_link_expiry)
+    except Exception as e:
+        print(e)
+        return Response(f'{{"message": "{e}"}}', status=status_codes.SERVER_ERROR, mimetype='application/json')
+    if request_body is None:
+        return Response('{"message":"New password not provided"}', status=status_codes.FORBIDDEN, mimetype='application/json')
+    new_password = request_body.get(pass_word)
+    user = UserModel.query.filter_by(email=user_email).first()
+    if not user:
+        return Response('{"message":"No such user registered in database"}', status=status_codes.NOT_FOUND, mimetype='application/json')
+    user.password = user.hash_password(new_password)
+    db.session.commit()
+    return Response('{"message":"Password changed successfully"}', status=status_codes.OK, mimetype='application/json')

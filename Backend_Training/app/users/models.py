@@ -11,13 +11,18 @@ class UserModel(db.Model):
     confirmed = db.Column(db.Boolean, default=False, nullable=False)
     tasks = db.relationship('TodoModel', backref='user', primaryjoin='UserModel.id == TodoModel.userID')
 
+    def hash_password(self, password):
+        return generate_password_hash(password).decode('utf-8')
+
     def __init__(self, username, email, password):
         self.username = username
-        self.password = generate_password_hash(password).decode('utf-8')
+        self.password = hash_password(password)
         self.email = email
 
     def __repr__(self):
         return f"""User('{self.username}', '{self.email}', '{self.confirmed}')"""
+
+
 
 
 class BlackList(db.Model):

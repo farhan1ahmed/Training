@@ -9,7 +9,7 @@ title = 'Title'
 description = 'Description'
 duedate = 'DueDate'
 status = 'Status'
-status_1 = 'Work in Progress'.lower()   #The status of the ongoing task that can be updated by the user
+status_1 = 'Work in Progress'.lower()   # The status of the ongoing task that can be updated by the user
 status_2 = 'Completed'.lower()
 
 
