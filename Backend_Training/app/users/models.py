@@ -16,7 +16,7 @@ class UserModel(db.Model):
 
     def __init__(self, username, email, password):
         self.username = username
-        self.password = hash_password(password)
+        self.password = self.hash_password(password)
         self.email = email
 
     def __repr__(self):
