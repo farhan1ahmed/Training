@@ -5,19 +5,24 @@ from datetime import datetime
 
 class UserModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String, unique=True, nullable=False)
-    email = db.Column(db.String, unique=True, nullable=False)
-    password = db.Column(db.String, nullable=False)
+    username = db.Column(db.String)
+    email = db.Column(db.String, unique=True)
+    password = db.Column(db.String)
+    fb_userID = db.Column(db.String)
+    fb_access_token = db.Column(db.String)
     confirmed = db.Column(db.Boolean, default=False, nullable=False)
     tasks = db.relationship('TodoModel', backref='user', primaryjoin='UserModel.id == TodoModel.userID')
 
     def hash_password(self, password):
         return generate_password_hash(password).decode('utf-8')
 
-    def __init__(self, username, email, password):
+    def __init__(self, username, email, password, fb_userID, fb_access_token):
         self.username = username
-        self.password = self.hash_password(password)
+        if password is not None:
+            self.password = self.hash_password(password)
         self.email = email
+        self.fb_userID = fb_userID
+        self.fb_access_token = fb_access_token
 
     def __repr__(self):
         return f"""User('{self.username}', '{self.email}', '{self.confirmed}')"""

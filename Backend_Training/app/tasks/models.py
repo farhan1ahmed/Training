@@ -16,7 +16,7 @@ class TodoModel(db.Model):
     userID = db.Column(db.Integer, db.ForeignKey('user_model.id'), nullable=False)
 
     def __repr__(self):
-        return f"""Task('{self.Title}', '{self.Description}', '{self.Status}')"""
+        return f"""\"Title: {self.Title}, Description: {self.Description}, Status: {self.Status}\""""
 
     @property
     def list_all(self):

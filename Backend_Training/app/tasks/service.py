@@ -136,7 +136,6 @@ def download_attachment(item_id):
                     headers={'Content-disposition': 'attachment; filename=\"' + task.Attachment_name + '\"'})
 
 
-
 def delete_attachment(item_id):
     user = get_jwt_identity()
     task = TodoModel.query.filter_by(userID=user).filter_by(id=item_id).first()
@@ -153,4 +152,27 @@ def delete_attachment(item_id):
     return Response('{"message":"Attachment deleted successfully"}', status=status_codes.OK, mimetype='application/json')
 
 
+def similar_tasks():
+    user = get_jwt_identity()
+    tasks = TodoModel.query.filter_by(userID=user).all()
+    similar_tasks_list = []
+    index_of_similar_tasks = []
+    for i in range(len(tasks)):
+        sublists = []
+        if i not in index_of_similar_tasks:
+            sublists.append(tasks[i].id)
+            for j in range(i+1, len(tasks)):
+                if tasks[i].Description == tasks[j].Description:
+                    sublists.append(tasks[j].id)
+                    index_of_similar_tasks.append(j)
+            if len(sublists) > 1:
+                similar_tasks_list.append(sublists)
+    message = []
+    for similar_task in similar_tasks_list:
+        sentence = "Task "
+        sentence = sentence + ", Task ".join(map(str, similar_task[:-1]))
+        sentence = sentence + f" and Task {similar_task[-1]} are similar tasks!"
+        message.append(sentence)
+    message = ', '.join(map(str, message))
+    return Response(f'{{"message":"{message}"}}', status=status_codes.OK, mimetype='application/json')
 

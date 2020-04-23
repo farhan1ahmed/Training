@@ -14,7 +14,7 @@
 """
 
 from flask import Response, url_for
-import datetime
+import datetime, requests
 from flask_bcrypt import check_password_hash
 from flask_jwt_extended import create_access_token
 from .models import UserModel, BlackList
@@ -26,13 +26,13 @@ from flask_mail import Message
 
 SECRET_KEY = 'SECRET_KEY'
 PASSWORD_SALT = 'PASSWORD_SALT'
-DEFAULT_MAIL_SENDER = 'DEFAULT_MAIL_SENDER'
 EMAIL_LINK_EXPIRY = 3600  # seconds
 USERNAME = 'username'
 PASSWORD = 'password'
 EMAIL = 'email'
 STATUS_CANCEL = 'cancel'
 STATUS_CONFIRM = 'confirm'
+NAME = 'name'
 
 
 # Functions related to Confirmation Email Handling
@@ -56,13 +56,21 @@ def generate_email_token(email):
 
 def send_confirmation_email(email):
     confirm_url = url_for('user.confirm_user', token=generate_email_token(email), _external=True)
-    msg = Message(subject='ToDo App: Confirm your Email', body=confirm_url, recipients=[email], sender=DEFAULT_MAIL_SENDER)
+    msg = Message(subject='ToDo App: Confirm your Email', body=confirm_url, recipients=[email], sender=app.config.get('DEFAULT_MAIL_SENDER'))
     mail.send(msg)
 
 
 # User Registration/ Login / Confirm Email/ Logout
 def register_user(request_body):
-    user = UserModel(username=request_body.get(USERNAME), email=request_body.get(EMAIL), password=request_body.get(PASSWORD))
+    email_exists = UserModel.query.filter_by(email=request_body.get(EMAIL)).first()
+    if email_exists:
+        return Response('{"message":"Email already registered before"}', status=status_codes.FORBIDDEN,
+                        mimetype='application/json')
+    if request_body.get(USERNAME) is None or request_body.get(EMAIL) is None or request_body.get(PASSWORD) is None:
+        return Response('{"message":"Username, Email or Password was not provided"}', status=status_codes.FORBIDDEN,
+                        mimetype='application/json')
+    user = UserModel(username=request_body.get(USERNAME), email=request_body.get(EMAIL), password=request_body.get(PASSWORD),
+                     fb_access_token=None, fb_userID=None)
     db.session.add(user)
     db.session.commit()
     send_confirmation_email(user.email)
@@ -87,6 +95,44 @@ def login_user(request_body):
     res.set_cookie("access_token_cookie", value=access_token)
     res.set_cookie("csrf_access_token", value=app.config.get(SECRET_KEY))
     return res
+
+
+def API_facebook_login(request_body):
+    userID = request_body.get('userID')
+    fbaccesstoken = request_body.get('accessToken')
+    user_data_from_fb = requests.get(f"https://graph.facebook.com/me?fields=id,name,email&access_token={fbaccesstoken}")
+    user = UserModel.query.filter_by(fb_userID=userID).first()
+    if user is None:
+        email_exists = UserModel.query.filter_by(email=user_data_from_fb.json()[EMAIL]).first()
+        if email_exists:
+            return Response('{"message": "Email already exists"}', status=status_codes.FORBIDDEN,
+                            mimetype='application/json')
+        user = UserModel(username=None, fb_access_token=fbaccesstoken, fb_userID=userID , email=None, password=None)
+        db.session.add(user)
+        db.session.commit()
+        if user_data_from_fb.status_code == 200:
+            user.username = user_data_from_fb.json()[NAME]
+            user.email = user_data_from_fb.json()[EMAIL]
+            user.confirmed = True
+            db.session.add(user)
+            db.session.commit()
+            life = datetime.timedelta(days=1)
+            access_token = create_access_token(identity=str(user.id), expires_delta=life)
+            res = Response('{"message": "New User authenticated, you can now login"}', status=status_codes.CREATED,
+                           mimetype='application/json')
+            res.set_cookie("access_token_cookie", value=access_token)
+            res.set_cookie("csrf_access_token", value=app.config.get(SECRET_KEY))
+        return res
+    user.fb_access_token = fbaccesstoken
+    db.session.commit()
+    life = datetime.timedelta(days=1)
+    access_token = create_access_token(identity=str(user.id), expires_delta=life)
+    res =  Response('{"message":"Existing User authenticated, you can now login"}', status=status_codes.OK,
+                    mimetype='application/json')
+    res.set_cookie("access_token_cookie", value=access_token)
+    res.set_cookie("csrf_access_token", value=app.config.get(SECRET_KEY))
+    return res
+
 
 
 def confirm_user(token, status):
@@ -124,7 +170,7 @@ def logout_user(token):
 def send_password_reset_email(email):
     reset_url = url_for('user.reset_password', resettoken=generate_email_token(email), _external=True)
     msg = Message(subject='ToDo App: Password Reset', body=reset_url, recipients=[email],
-                  sender=DEFAULT_MAIL_SENDER)
+                  sender=app.config.get('DEFAULT_MAIL_SENDER'))
     mail.send(msg)
 
 
