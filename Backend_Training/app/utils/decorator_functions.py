@@ -17,9 +17,9 @@ def print_func_name(fn):
 def jwt_required_and_not_blacklisted(fn):
     @wraps(fn)
     def wrapper(*arg, **kwargs):
-        #verify_jwt_in_request()
+        verify_jwt_in_request()
         cookie = request.headers.get('Cookie')
-        if 'access_token_cookie' in cookie:
+        if cookie is not None and 'access_token_cookie' in cookie:
             token = cookie.split(sep='access_token_cookie=')[1].split(';')[0]
         else:
             return Response('{"message":"Access Token Missing"}',

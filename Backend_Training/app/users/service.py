@@ -33,8 +33,7 @@ EMAIL = 'email'
 STATUS_CANCEL = 'cancel'
 STATUS_CONFIRM = 'confirm'
 NAME = 'name'
-
-
+FB_USER = 2
 # Functions related to Confirmation Email Handling
 def generate_email_token(email):
     """ Generates a unique token that can be used to create URLs.
@@ -56,6 +55,7 @@ def generate_email_token(email):
 
 def send_confirmation_email(email):
     confirm_url = url_for('user.confirm_user', token=generate_email_token(email), _external=True)
+    print(confirm_url)
     msg = Message(subject='ToDo App: Confirm your Email', body=confirm_url, recipients=[email], sender=app.config.get('DEFAULT_MAIL_SENDER'))
     mail.send(msg)
 
@@ -69,8 +69,7 @@ def register_user(request_body):
     if request_body.get(USERNAME) is None or request_body.get(EMAIL) is None or request_body.get(PASSWORD) is None:
         return Response('{"message":"Username, Email or Password was not provided"}', status=status_codes.FORBIDDEN,
                         mimetype='application/json')
-    user = UserModel(username=request_body.get(USERNAME), email=request_body.get(EMAIL), password=request_body.get(PASSWORD),
-                     fb_access_token=None, fb_userID=None)
+    user = UserModel(username=request_body.get(USERNAME), email=request_body.get(EMAIL), password=request_body.get(PASSWORD))
     db.session.add(user)
     db.session.commit()
     send_confirmation_email(user.email)
@@ -91,7 +90,6 @@ def login_user(request_body):
     life = datetime.timedelta(days=1)
     access_token = create_access_token(identity=str(user.id), expires_delta=life)
     res = Response('{"message": "Success"}', status=status_codes.OK, mimetype='application/json')
-    #set_access_cookies(res, access_token)
     res.set_cookie("access_token_cookie", value=access_token)
     res.set_cookie("csrf_access_token", value=app.config.get(SECRET_KEY))
     return res
@@ -100,39 +98,30 @@ def login_user(request_body):
 def API_facebook_login(request_body):
     userID = request_body.get('userID')
     fbaccesstoken = request_body.get('accessToken')
+    print(userID)
+    print(fbaccesstoken)
     user_data_from_fb = requests.get(f"https://graph.facebook.com/me?fields=id,name,email&access_token={fbaccesstoken}")
-    user = UserModel.query.filter_by(fb_userID=userID).first()
+    print(user_data_from_fb)
+    username = user_data_from_fb.json().get(NAME)
+    email = user_data_from_fb.json().get(EMAIL)
+    user = UserModel.query.filter_by(user_type_id=2).filter_by(email=email).first()
     if user is None:
-        email_exists = UserModel.query.filter_by(email=user_data_from_fb.json()[EMAIL]).first()
+        email_exists = UserModel.query.filter_by(email=email).first()
         if email_exists:
             return Response('{"message": "Email already exists"}', status=status_codes.FORBIDDEN,
                             mimetype='application/json')
-        user = UserModel(username=None, fb_access_token=fbaccesstoken, fb_userID=userID , email=None, password=None)
+        user = UserModel(username=username, email=email, password=None)
+        user.user_type_id = FB_USER
+        user.confirmed = True
         db.session.add(user)
         db.session.commit()
-        if user_data_from_fb.status_code == 200:
-            user.username = user_data_from_fb.json()[NAME]
-            user.email = user_data_from_fb.json()[EMAIL]
-            user.confirmed = True
-            db.session.add(user)
-            db.session.commit()
-            life = datetime.timedelta(days=1)
-            access_token = create_access_token(identity=str(user.id), expires_delta=life)
-            res = Response('{"message": "New User authenticated, you can now login"}', status=status_codes.CREATED,
-                           mimetype='application/json')
-            res.set_cookie("access_token_cookie", value=access_token)
-            res.set_cookie("csrf_access_token", value=app.config.get(SECRET_KEY))
-        return res
-    user.fb_access_token = fbaccesstoken
-    db.session.commit()
     life = datetime.timedelta(days=1)
     access_token = create_access_token(identity=str(user.id), expires_delta=life)
-    res =  Response('{"message":"Existing User authenticated, you can now login"}', status=status_codes.OK,
+    res = Response('{"message":"Existing User authenticated, you can now login"}', status=status_codes.OK,
                     mimetype='application/json')
     res.set_cookie("access_token_cookie", value=access_token)
     res.set_cookie("csrf_access_token", value=app.config.get(SECRET_KEY))
     return res
-
 
 
 def confirm_user(token, status):

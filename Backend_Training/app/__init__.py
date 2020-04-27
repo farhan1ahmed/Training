@@ -25,6 +25,8 @@ app.register_blueprint(tasks)
 app.register_blueprint(users)
 
 db.create_all()
+#from app.tasks.models import initialize_status_table
+#initialize_status_table()
 
 from app.utils.task_reminder_email import mail_reminder
 if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':

@@ -4,14 +4,16 @@ import datetime, os
 from .models import TodoModel
 from app import db
 from app.utils import status_codes
+from app.utils.date_parser import get_date
 from sqlalchemy import exc
+
 
 TITLE = 'Title'
 DESCRIPTION = 'Description'
 DUE_DATE = 'DueDate'
 STATUS = 'Status'
-STATUS_1 = 'Work in Progress'.lower()   # The status of the ongoing task that can be updated by the user
-STATUS_2 = 'Completed'.lower()
+STATUS_ID = 'Status_id'
+COMPLETED = 3
 
 
 def create(request_body):
@@ -33,25 +35,26 @@ def create(request_body):
         Raises:
             IntegrityError: If the Title of the task is not unique, the database refuses to add the new task.
     """
-    due_date = datetime.date(int(request_body.get(DUE_DATE)[0:4]), int(request_body.get(DUE_DATE)[5:7]),
-                             int(request_body.get(DUE_DATE)[8:10]))
+
+    due_date = get_date(request_body.get(DUE_DATE))
     task = TodoModel(Title=request_body.get(TITLE), Description=request_body.get(DESCRIPTION), DueDate=due_date,
-                     userID=get_jwt_identity())
+                     userID=get_jwt_identity(), Status_id=request_body.get(STATUS_ID))
     try:
         db.session.add(task)
         db.session.commit()
-    except exc.IntegrityError:
-        return Response('{"message": "A task with the same Title occurs already!"}', status=status_codes.FORBIDDEN, mimetype='application/json')
+    except exc.IntegrityError as exception:
+        return Response(f'{{"message": "{exception}"}}', status=status_codes.FORBIDDEN, mimetype='application/json')
     return Response('{"message":"success"}', status=status_codes.CREATED, mimetype='application/json')
 
 
 def list_all_items():
     user = get_jwt_identity()
+    print(user)
     tasks = TodoModel.query.filter_by(userID=user).all()
     print(tasks)
     if tasks is None:
         return Response('{"message":"No Content"}', status=status_codes.NOT_FOUND, mimetype='application/json')
-    return Response(json.dumps([i.list_all for i in tasks]), status=status_codes.NOT_FOUND, mimetype='application/json')
+    return Response(json.dumps([i.list_all for i in tasks]), status=status_codes.OK, mimetype='application/json')
 
 
 def list_item(item_id):
@@ -59,7 +62,7 @@ def list_item(item_id):
     task = TodoModel.query.filter_by(userID=user).filter_by(id=item_id).first()
     if task is None:
         return Response('{"message":"No Content"}', status=status_codes.NOT_FOUND, mimetype='application/json')
-    return Response(json.dumps(task.list_all), status=status_codes.NOT_FOUND, mimetype='application/json')
+    return Response(json.dumps(task.list_all), status=status_codes.OK, mimetype='application/json')
 
 
 def delete_item(item_id):
@@ -77,27 +80,18 @@ def update_item(item_id, request_body):
     task = TodoModel.query.filter_by(userID=user).filter_by(id=item_id).first()
     if task is None:
         return Response('{"message":"No such task exists."}', status=status_codes.NOT_FOUND, mimetype='application/json')
-    if request_body.get(TITLE):
-        task.Title = request_body.get(TITLE)
-    if request_body.get(DESCRIPTION):
-        task.Description = request_body.get(DESCRIPTION)
-    if request_body.get(DUE_DATE):
-        due_date = datetime.date(int(request_body.get(DUE_DATE)[0:4]), int(request_body.get(DUE_DATE)[5:7]),
-                                 int(request_body.get(DUE_DATE)[8:10]))
-        task.DueDate = due_date
-    if request_body.get(STATUS):
-        if request_body.get(STATUS).lower() == STATUS_1:
-            task.Status = request_body.get(STATUS)
-        elif request_body.get(STATUS).lower() == STATUS_2:
-            task.Status = request_body.get(STATUS)
-            task.CompletionDate = datetime.datetime.utcnow()
+    for attribute in request_body:
+        if attribute == DUE_DATE:
+            due_date = get_date(request_body.get(DUE_DATE))
+            setattr(task, attribute, due_date)
         else:
-            return Response('{"message":"Status can be changed either to "Work in Progress" or "Completed" only"}',
-                            status=status_codes.FORBIDDEN, mimetype='application/json')
+            setattr(task, attribute, request_body.get(attribute))
+    if task.Status_id == COMPLETED:
+        task.CompletionDate = datetime.datetime.utcnow()
     try:
         db.session.commit()
     except exc.IntegrityError:
-        return Response('{"message": "A task with the same Title occurs already!"}', status=status_codes.FORBIDDEN,
+        return Response(f'{{"message": "{exc.IntegrityError}"}}', status=status_codes.FORBIDDEN,
                         mimetype='application/json')
     return Response('{"message":"Task updated successfully"}', status=status_codes.OK,
                     mimetype='application/json')
@@ -155,24 +149,23 @@ def delete_attachment(item_id):
 def similar_tasks():
     user = get_jwt_identity()
     tasks = TodoModel.query.filter_by(userID=user).all()
-    similar_tasks_list = []
-    index_of_similar_tasks = []
-    for i in range(len(tasks)):
-        sublists = []
-        if i not in index_of_similar_tasks:
-            sublists.append(tasks[i].id)
-            for j in range(i+1, len(tasks)):
-                if tasks[i].Description == tasks[j].Description:
-                    sublists.append(tasks[j].id)
-                    index_of_similar_tasks.append(j)
-            if len(sublists) > 1:
-                similar_tasks_list.append(sublists)
+    task_copy = tasks
     message = []
-    for similar_task in similar_tasks_list:
-        sentence = "Task "
-        sentence = sentence + ", Task ".join(map(str, similar_task[:-1]))
-        sentence = sentence + f" and Task {similar_task[-1]} are similar tasks!"
-        message.append(sentence)
-    message = ', '.join(map(str, message))
+    for i in range(len(tasks)-1):
+        similar_task = []
+        indexes = []
+        if len(task_copy) > 1:
+            for j in range(len(task_copy)):
+                if tasks[i].Description == task_copy[j].Description:
+                    similar_task.append(task_copy[j].id)
+                    indexes.append(j)
+            k = 0
+            for index in set(indexes):
+                task_copy.pop(index-k)
+                k = k+1
+            sentence = "Task "
+            sentence = sentence + ", Task ".join(map(str, similar_task[:-1]))
+            sentence = sentence + f" and Task {similar_task[-1]} are similar tasks!"
+            message.append(sentence)
     return Response(f'{{"message":"{message}"}}', status=status_codes.OK, mimetype='application/json')
 

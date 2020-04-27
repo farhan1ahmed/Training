@@ -40,7 +40,7 @@ def delete_item(item_id):
     return service.delete_item(item_id)
 
 
-@tasks.route("/update/<item_id>", methods=['PUT'])
+@tasks.route("/update/<item_id>", methods=['PATCH'])
 @print_func_name
 @jwt_required_and_not_blacklisted
 def update_item(item_id):
