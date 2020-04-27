@@ -105,6 +105,7 @@ def API_facebook_login(request_body):
     username = user_data_from_fb.json().get(NAME)
     email = user_data_from_fb.json().get(EMAIL)
     user = UserModel.query.filter_by(user_type_id=2).filter_by(email=email).first()
+    user_status = "Existing"
     if user is None:
         email_exists = UserModel.query.filter_by(email=email).first()
         if email_exists:
@@ -115,9 +116,10 @@ def API_facebook_login(request_body):
         user.confirmed = True
         db.session.add(user)
         db.session.commit()
+        user_status = "New"
     life = datetime.timedelta(days=1)
     access_token = create_access_token(identity=str(user.id), expires_delta=life)
-    res = Response('{"message":"Existing User authenticated, you can now login"}', status=status_codes.OK,
+    res = Response(f'{{"message":"{user_status} User logged-in"}}', status=status_codes.OK,
                     mimetype='application/json')
     res.set_cookie("access_token_cookie", value=access_token)
     res.set_cookie("csrf_access_token", value=app.config.get(SECRET_KEY))
