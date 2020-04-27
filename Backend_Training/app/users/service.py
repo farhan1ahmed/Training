@@ -64,10 +64,10 @@ def send_confirmation_email(email):
 def register_user(request_body):
     email_exists = UserModel.query.filter_by(email=request_body.get(EMAIL)).first()
     if email_exists:
-        return Response('{"message":"Email already registered before"}', status=status_codes.FORBIDDEN,
+        return Response('{"message":"Email already registered before"}', status=status_codes.CONFLICT,
                         mimetype='application/json')
     if request_body.get(USERNAME) is None or request_body.get(EMAIL) is None or request_body.get(PASSWORD) is None:
-        return Response('{"message":"Username, Email or Password was not provided"}', status=status_codes.FORBIDDEN,
+        return Response('{"message":"Username, Email or Password was not provided"}', status=status_codes.UNAUTHORIZED,
                         mimetype='application/json')
     user = UserModel(username=request_body.get(USERNAME), email=request_body.get(EMAIL), password=request_body.get(PASSWORD))
     db.session.add(user)
@@ -109,7 +109,7 @@ def API_facebook_login(request_body):
     if user is None:
         email_exists = UserModel.query.filter_by(email=email).first()
         if email_exists:
-            return Response('{"message": "Email already exists"}', status=status_codes.FORBIDDEN,
+            return Response('{"message": "Email already exists"}', status=status_codes.CONFLICT,
                             mimetype='application/json')
         user = UserModel(username=username, email=email, password=None)
         user.user_type_id = FB_USER
@@ -170,6 +170,9 @@ def forgot_password(request_body):
     user = UserModel.query.filter_by(email=user_email).first()
     if not user:
         return Response('{"message":"No such Email registered in database"}', status=status_codes.NOT_FOUND,
+                        mimetype='application/json')
+    if user.user_type_id != 1:
+        return Response('{"message":"Oauth2 Account: Password can not be reset."}', status=status_codes.FORBIDDEN,
                         mimetype='application/json')
     send_password_reset_email(user.email)
     return Response('{"message":"success"}', status=status_codes.OK, mimetype='application/json')

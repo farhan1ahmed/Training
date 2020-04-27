@@ -43,7 +43,7 @@ def create(request_body):
         db.session.add(task)
         db.session.commit()
     except exc.IntegrityError as exception:
-        return Response(f'{{"message": "{exception}"}}', status=status_codes.FORBIDDEN, mimetype='application/json')
+        return Response(f'{{"message": "{exception}"}}', status=status_codes.CONFLICT, mimetype='application/json')
     return Response('{"message":"success"}', status=status_codes.CREATED, mimetype='application/json')
 
 
@@ -91,7 +91,7 @@ def update_item(item_id, request_body):
     try:
         db.session.commit()
     except exc.IntegrityError:
-        return Response(f'{{"message": "{exc.IntegrityError}"}}', status=status_codes.FORBIDDEN,
+        return Response(f'{{"message": "{exc.IntegrityError}"}}', status=status_codes.CONFLICT,
                         mimetype='application/json')
     return Response('{"message":"Task updated successfully"}', status=status_codes.OK,
                     mimetype='application/json')
@@ -120,9 +120,9 @@ def download_attachment(item_id):
     user = get_jwt_identity()
     task = TodoModel.query.filter_by(userID=user).filter_by(id=item_id).first()
     if task is None:
-        return Response('{"message":"No Content"}', status=status_codes.NOT_FOUND, mimetype='application/json')
+        return Response('{"message":"No Task Found"}', status=status_codes.NOT_FOUND, mimetype='application/json')
     if task.Attachment_data is None and task.Attachment_name is None:
-        return Response('{"message":"No Content"}', status=status_codes.NOT_FOUND, mimetype='application/json')
+        return Response('{"message":"No Attachment Found"}', status=status_codes.NOT_FOUND, mimetype='application/json')
     with open(task.Attachment_data, 'rb') as f:
         download_file = f.read()
         f.close()
