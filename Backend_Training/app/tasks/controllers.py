@@ -19,11 +19,11 @@ def create():
     return service.create(request_body)
 
 
-@tasks.route("/list_items")
+@tasks.route("/list_items/page")
 @print_func_name
 @jwt_required_and_not_blacklisted
 def list_items():
-    return service.list_all_items()
+    return service.list_all_items(request)
 
 
 @tasks.route("/list_item/<item_id>")

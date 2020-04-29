@@ -47,14 +47,42 @@ def create(request_body):
     return Response('{"message":"success"}', status=status_codes.CREATED, mimetype='application/json')
 
 
-def list_all_items():
+def list_all_items(request):
     user = get_jwt_identity()
     print(user)
+    tasks = get_paginated_list(user, start=int(request.args.get('start', 1)), limit=int(request.args.get('limit', 5)))
+    return tasks
+
+
+def get_paginated_list(user, start, limit):
     tasks = TodoModel.query.filter_by(userID=user).all()
-    print(tasks)
-    if tasks is None:
-        return Response('{"message":"No Content"}', status=status_codes.NOT_FOUND, mimetype='application/json')
-    return Response(json.dumps([i.list_all for i in tasks]), status=status_codes.OK, mimetype='application/json')
+    total_tasks = len(tasks)
+    if start > total_tasks:
+        return Response('{"message":"Page not found"}', status=status_codes.NOT_FOUND, mimetype='application/json')
+    response_object = {}
+    url = '/list_items/page'
+    response_object['start'] = start
+    response_object['limit'] = limit
+    response_object['total_tasks'] = total_tasks
+    # set previous url
+    if start == 1:
+        response_object['previous'] = ''
+    else:
+        start_of_previous_page = max(1, start-limit)
+        end_of_previous_page = start - 1
+        response_object['previous'] = url + f'?start={start_of_previous_page}&limit={end_of_previous_page}'
+    # set next url
+    if start + limit > total_tasks:
+        response_object['next']=''
+    else:
+        start_of_next_page= start + limit
+        response_object['next'] = url + f'?start={start_of_next_page}&limit={limit}'
+    # tasks for current page
+    tasks = tasks[start-1:start+limit-1]
+    page_tasks = [task.list_all for task in tasks]
+    response_object['tasks'] = page_tasks
+    return Response(json.dumps(response_object), status=status_codes.OK, mimetype='application/json')
+
 
 
 def list_item(item_id):
