@@ -76,3 +76,10 @@ def delete_attachment(item_id):
 def similar_tasks():
     return service.similar_tasks()
 
+
+@tasks.route("/reports/avg_tasks_per_day")
+@print_func_name
+@jwt_required_and_not_blacklisted
+def avg_tasks_per_day():
+    return service.avg_tasks_per_day()
+
