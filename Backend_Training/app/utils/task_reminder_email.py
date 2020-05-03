@@ -17,7 +17,7 @@ def mail_reminder():
         search_date = f"{datetime.datetime.utcnow().date()}%"
         tasks = TodoModel.query.filter_by(userID=user_id).filter(TodoModel.DueDate.like(search_date)).\
             filter(sqlalchemy.not_(TodoModel.Status_id.like(3))).all()
-        if tasks is not None:
+        if len(tasks) > 0:
             msg_body = "These tasks are due today!\n"
             for task in tasks:
                 msg_body = msg_body + f"{task}\n"
