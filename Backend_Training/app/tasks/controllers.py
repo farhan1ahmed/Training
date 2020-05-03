@@ -70,7 +70,7 @@ def delete_attachment(item_id):
     return service.delete_attachment(item_id)
 
 
-@tasks.route("/similar_tasks/")
+@tasks.route("/similar_tasks")
 @print_func_name
 @jwt_required_and_not_blacklisted
 def similar_tasks():
