@@ -49,17 +49,19 @@ def create(request_body):
 
 def list_all_items(request):
     user = get_jwt_identity()
-    print(user)
     tasks = get_paginated_list(user, start=int(request.args.get('start', 1)), limit=int(request.args.get('limit', 5)))
     return tasks
 
 
 def get_paginated_list(user, start, limit):
-    tasks = TodoModel.query.filter_by(userID=user).all()
-    total_tasks = len(tasks)
+    tasks = TodoModel.query.filter_by(userID=user).offset(start-1).limit(limit).all()
+    total_tasks = TodoModel.query.filter_by(userID=user).count()
     if start > total_tasks:
         return Response('{"message":"Page not found"}', status=status_codes.NOT_FOUND, mimetype='application/json')
     response_object = {}
+    # tasks for current page
+    page_tasks = [task.list_all for task in tasks]
+    response_object['tasks'] = page_tasks
     url = '/list_items/page'
     response_object['start'] = start
     response_object['limit'] = limit
@@ -73,14 +75,10 @@ def get_paginated_list(user, start, limit):
         response_object['previous'] = url + f'?start={start_of_previous_page}&limit={end_of_previous_page}'
     # set next url
     if start + limit > total_tasks:
-        response_object['next']=''
+        response_object['next'] = ''
     else:
         start_of_next_page= start + limit
         response_object['next'] = url + f'?start={start_of_next_page}&limit={limit}'
-    # tasks for current page
-    tasks = tasks[start-1:start+limit-1]
-    page_tasks = [task.list_all for task in tasks]
-    response_object['tasks'] = page_tasks
     return Response(json.dumps(response_object), status=status_codes.OK, mimetype='application/json')
 
 
@@ -177,23 +175,15 @@ def delete_attachment(item_id):
 def similar_tasks():
     user = get_jwt_identity()
     tasks = TodoModel.query.filter_by(userID=user).all()
-    task_copy = tasks
+    dict_task = {}
+    for task in tasks:
+        dict_task.setdefault(task.Description, []).append(task.id)
     message = []
-    for i in range(len(tasks)-1):
-        similar_task = []
-        indexes = []
-        if len(task_copy) > 1:
-            for j in range(len(task_copy)):
-                if tasks[i].Description == task_copy[j].Description:
-                    similar_task.append(task_copy[j].id)
-                    indexes.append(j)
-            k = 0
-            for index in set(indexes):
-                task_copy.pop(index-k)
-                k = k+1
+    for key in dict_task:
+        if len(dict_task.get(key)) > 1:
             sentence = "Task "
-            sentence = sentence + ", Task ".join(map(str, similar_task[:-1]))
-            sentence = sentence + f" and Task {similar_task[-1]} are similar tasks!"
+            sentence = sentence + ", Task ".join(map(str, dict_task.get(key)[:-1]))
+            sentence = sentence + f" and Task {dict_task.get(key)[-1]} are similar tasks!"
             message.append(sentence)
     return Response(f'{{"message":"{message}"}}', status=status_codes.OK, mimetype='application/json')
 
