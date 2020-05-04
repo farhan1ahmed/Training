@@ -187,3 +187,22 @@ def similar_tasks():
             message.append(sentence)
     return Response(f'{{"message":"{message}"}}', status=status_codes.OK, mimetype='application/json')
 
+
+def most_tasks_day():
+    user = get_jwt_identity()
+    tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=COMPLETED).all()
+    if len(tasks) == 0:
+        return Response("message: No tasks found", status=status_codes.NOT_FOUND, mimetype='application/json')
+    completed_task_dict = dict()
+    for task in tasks:
+        completed_task_dict.setdefault(task.CompletionDate.date(), []).append(task.id)
+    max_tasks = -1
+    for key in completed_task_dict:
+        if len(completed_task_dict.get(key)) > max_tasks:
+            max_tasks = len(completed_task_dict.get(key))
+            resp_obj = dict()
+            resp_obj["MaxCount"] = max_tasks
+            resp_obj.setdefault("Date", []).append(key)
+        elif len(completed_task_dict.get(key)) == max_tasks:
+            resp_obj.setdefault("Date", []).append(key)
+    return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')

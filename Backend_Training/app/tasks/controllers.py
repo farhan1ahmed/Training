@@ -76,3 +76,9 @@ def delete_attachment(item_id):
 def similar_tasks():
     return service.similar_tasks()
 
+
+@tasks.route("/reports/max_tasks_day")
+@print_func_name
+@jwt_required_and_not_blacklisted
+def most_tasks_day():
+    return service.most_tasks_day()
