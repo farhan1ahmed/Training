@@ -187,3 +187,19 @@ def similar_tasks():
             message.append(sentence)
     return Response(f'{{"message":"{message}"}}', status=status_codes.OK, mimetype='application/json')
 
+
+def late_tasks():
+    user = get_jwt_identity()
+    tasks = TodoModel.query.filter_by(userID=user).all()
+    if len(tasks) == 0:
+        return Response("message: No tasks found", status=status_codes.NOT_FOUND, mimetype='application/json')
+    count = 0
+    for task in tasks:
+        if task.CompletionDate is None:
+            if task.DueDate.date() < datetime.date.today():
+                count = count + 1
+        elif task.DueDate.date() < task.CompletionDate.date():
+            count = count + 1
+    resp_obj = dict()
+    resp_obj["Count"] = count
+    return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
