@@ -76,3 +76,9 @@ def delete_attachment(item_id):
 def similar_tasks():
     return service.similar_tasks()
 
+
+@tasks.route("/reports/tasks_opened_week")
+@print_func_name
+@jwt_required_and_not_blacklisted
+def tasks_opened_week():
+    return service.tasks_opened_week()
