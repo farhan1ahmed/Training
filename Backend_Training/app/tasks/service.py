@@ -193,7 +193,7 @@ def tasks_count_breakdown():
     total_tasks = TodoModel.query.filter_by(userID=user).count()
     if total_tasks == 0:
         return Response("message: No task found", status=status_codes.NOT_FOUND, mimetype='application/json')
-    completed_tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=3).count()
+    completed_tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=COMPLETED).count()
     remaining_tasks = TodoModel.query.filter_by(userID=user). filter(not_(TodoModel.Status_id.like(3))).count()
     resp_obj = dict()
     resp_obj['Total Tasks'] = total_tasks
