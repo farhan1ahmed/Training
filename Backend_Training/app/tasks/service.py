@@ -5,7 +5,7 @@ from .models import TodoModel
 from app import db
 from app.utils import status_codes
 from app.utils.date_parser import get_date
-from sqlalchemy import exc
+from sqlalchemy import exc, not_
 
 
 TITLE = 'Title'
@@ -201,4 +201,19 @@ def avg_tasks_per_day():
     resp_obj = dict()
     resp_obj["avg_tasks"] = avg_tasks_completed
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
+
+
+def tasks_count_breakdown():
+    user = get_jwt_identity()
+    total_tasks = TodoModel.query.filter_by(userID=user).count()
+    if total_tasks == 0:
+        return Response("message: No task found", status=status_codes.NOT_FOUND, mimetype='application/json')
+    completed_tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=COMPLETED).count()
+    remaining_tasks = TodoModel.query.filter_by(userID=user). filter(not_(TodoModel.Status_id.like(COMPLETED))).count()
+    resp_obj = dict()
+    resp_obj['total_tasks'] = total_tasks
+    resp_obj['completed_tasks'] = completed_tasks
+    resp_obj['remaining_tasks'] = remaining_tasks
+    return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
+
 
