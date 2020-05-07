@@ -201,5 +201,5 @@ def late_tasks():
         elif task.DueDate.date() < task.CompletionDate.date():
             count = count + 1
     resp_obj = dict()
-    resp_obj["Count"] = count
+    resp_obj["count"] = count
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
