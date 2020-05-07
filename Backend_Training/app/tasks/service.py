@@ -196,9 +196,9 @@ def tasks_count_breakdown():
     completed_tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=COMPLETED).count()
     remaining_tasks = TodoModel.query.filter_by(userID=user). filter(not_(TodoModel.Status_id.like(COMPLETED))).count()
     resp_obj = dict()
-    resp_obj['Total Tasks'] = total_tasks
-    resp_obj['Completed Tasks'] = completed_tasks
-    resp_obj['Remaining Tasks'] = remaining_tasks
+    resp_obj['total_tasks'] = total_tasks
+    resp_obj['completed_tasks'] = completed_tasks
+    resp_obj['remaining_tasks'] = remaining_tasks
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
 
 
