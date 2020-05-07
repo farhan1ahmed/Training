@@ -70,11 +70,18 @@ def delete_attachment(item_id):
     return service.delete_attachment(item_id)
 
 
-@tasks.route("/similar_tasks/")
+@tasks.route("/similar_tasks")
 @print_func_name
 @jwt_required_and_not_blacklisted
 def similar_tasks():
     return service.similar_tasks()
+
+
+@tasks.route("/reports/avg_tasks_per_day")
+@print_func_name
+@jwt_required_and_not_blacklisted
+def avg_tasks_per_day():
+    return service.avg_tasks_per_day()
 
 
 @tasks.route("/reports/tasks_count_breakdown")
@@ -82,4 +89,5 @@ def similar_tasks():
 @jwt_required_and_not_blacklisted
 def tasks_count_breakdown():
     return service.tasks_count_breakdown()
+
 
