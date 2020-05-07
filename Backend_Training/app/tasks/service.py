@@ -5,7 +5,7 @@ from .models import TodoModel
 from app import db
 from app.utils import status_codes
 from app.utils.date_parser import get_date
-from sqlalchemy import exc
+from sqlalchemy import exc, not_
 
 
 TITLE = 'Title'
@@ -206,3 +206,51 @@ def most_tasks_day():
         elif len(completed_task_dict.get(key)) == max_tasks:
             resp_obj.setdefault("date", []).append(key)
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
+
+
+def late_tasks():
+    user = get_jwt_identity()
+    tasks = TodoModel.query.filter_by(userID=user).all()
+    if len(tasks) == 0:
+        return Response("message: No tasks found", status=status_codes.NOT_FOUND, mimetype='application/json')
+    count = 0
+    for task in tasks:
+        if task.CompletionDate is None:
+            if task.DueDate.date() < datetime.date.today():
+                count = count + 1
+        elif task.DueDate.date() < task.CompletionDate.date():
+            count = count + 1
+    resp_obj = dict()
+    resp_obj["count"] = count
+    return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
+
+
+def avg_tasks_per_day():
+    user = get_jwt_identity()
+    completed_tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=3).count()
+    first_task = TodoModel.query.filter_by(userID=user).order_by(TodoModel.CreationDate).first()
+    if first_task is None:
+        return Response("message: No tasks found", status=status_codes.NOT_FOUND, mimetype='application/json')
+    start_date = first_task.CreationDate
+    today = datetime.date.today()
+    no_of_days = int((today - start_date.date()).days)
+    avg_tasks_completed = completed_tasks / no_of_days
+    resp_obj = dict()
+    resp_obj["avg_tasks"] = avg_tasks_completed
+    return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
+
+
+def tasks_count_breakdown():
+    user = get_jwt_identity()
+    total_tasks = TodoModel.query.filter_by(userID=user).count()
+    if total_tasks == 0:
+        return Response("message: No task found", status=status_codes.NOT_FOUND, mimetype='application/json')
+    completed_tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=COMPLETED).count()
+    remaining_tasks = TodoModel.query.filter_by(userID=user). filter(not_(TodoModel.Status_id.like(COMPLETED))).count()
+    resp_obj = dict()
+    resp_obj['total_tasks'] = total_tasks
+    resp_obj['completed_tasks'] = completed_tasks
+    resp_obj['remaining_tasks'] = remaining_tasks
+    return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
+
+
