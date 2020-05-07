@@ -5,7 +5,7 @@ from .models import TodoModel
 from app import db
 from app.utils import status_codes
 from app.utils.date_parser import get_date
-from sqlalchemy import exc
+from sqlalchemy import exc, not_
 
 
 TITLE = 'Title'
@@ -186,4 +186,20 @@ def similar_tasks():
             sentence = sentence + f" and Task {dict_task.get(key)[-1]} are similar tasks!"
             message.append(sentence)
     return Response(f'{{"message":"{message}"}}', status=status_codes.OK, mimetype='application/json')
+
+
+def tasks_count_breakdown():
+    user = get_jwt_identity()
+    total_tasks = TodoModel.query.filter_by(userID=user).count()
+    if total_tasks == 0:
+        return Response("message: No task found", status=status_codes.NOT_FOUND, mimetype='application/json')
+    completed_tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=COMPLETED).count()
+    remaining_tasks = TodoModel.query.filter_by(userID=user). filter(not_(TodoModel.Status_id.like(COMPLETED))).count()
+    resp_obj = dict()
+    resp_obj['Total Tasks'] = total_tasks
+    resp_obj['Completed Tasks'] = completed_tasks
+    resp_obj['Remaining Tasks'] = remaining_tasks
+    return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
+
+
 

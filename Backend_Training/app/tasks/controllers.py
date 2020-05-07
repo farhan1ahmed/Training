@@ -76,3 +76,10 @@ def delete_attachment(item_id):
 def similar_tasks():
     return service.similar_tasks()
 
+
+@tasks.route("/reports/tasks_count_breakdown")
+@print_func_name
+@jwt_required_and_not_blacklisted
+def tasks_count_breakdown():
+    return service.tasks_count_breakdown()
+
