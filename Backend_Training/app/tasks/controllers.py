@@ -77,6 +77,13 @@ def similar_tasks():
     return service.similar_tasks()
 
 
+@tasks.route("/reports/late_tasks")
+@print_func_name
+@jwt_required_and_not_blacklisted
+def late_tasks():
+    return service.late_tasks()
+
+
 @tasks.route("/reports/avg_tasks_per_day")
 @print_func_name
 @jwt_required_and_not_blacklisted
