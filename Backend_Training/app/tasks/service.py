@@ -196,13 +196,13 @@ def most_tasks_day():
     completed_task_dict = dict()
     for task in tasks:
         completed_task_dict.setdefault(task.CompletionDate.date(), []).append(task.id)
-    max_tasks = -1
+    max_tasks = 0
     for key in completed_task_dict:
         if len(completed_task_dict.get(key)) > max_tasks:
             max_tasks = len(completed_task_dict.get(key))
             resp_obj = dict()
-            resp_obj["MaxCount"] = max_tasks
-            resp_obj.setdefault("Date", []).append(key)
+            resp_obj["max_count"] = max_tasks
+            resp_obj.setdefault("date", []).append(key)
         elif len(completed_task_dict.get(key)) == max_tasks:
-            resp_obj.setdefault("Date", []).append(key)
+            resp_obj.setdefault("date", []).append(key)
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
