@@ -83,3 +83,10 @@ def similar_tasks():
 def avg_tasks_per_day():
     return service.avg_tasks_per_day()
 
+
+@tasks.route("/reports/tasks_count_breakdown")
+@print_func_name
+@jwt_required_and_not_blacklisted
+def tasks_count_breakdown():
+    return service.tasks_count_breakdown()
+
