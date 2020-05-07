@@ -188,6 +188,19 @@ def similar_tasks():
     return Response(f'{{"message":"{message}"}}', status=status_codes.OK, mimetype='application/json')
 
 
+def tasks_opened_week():
+    user = get_jwt_identity()
+    tasks = TodoModel.query.filter_by(userID=user).all()
+    if len(tasks) == 0:
+        return Response("message: No tasks found", status=status_codes.NOT_FOUND, mimetype='application/json')
+    week = {"Monday": 0, "Tuesday": 0, "Wednesday": 0, "Thursday": 0, "Friday": 0, "Saturday": 0, "Sunday": 0}
+    for task in tasks:
+        day = task.CreationDate.strftime("%A")
+        if day in week:
+            week[day] += 1
+    return Response(json.dumps(week), status=status_codes.OK, mimetype='application/json')
+
+
 def most_tasks_day():
     user = get_jwt_identity()
     tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=COMPLETED).all()
@@ -252,5 +265,3 @@ def tasks_count_breakdown():
     resp_obj['completed_tasks'] = completed_tasks
     resp_obj['remaining_tasks'] = remaining_tasks
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
-
-

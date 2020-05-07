@@ -77,6 +77,13 @@ def similar_tasks():
     return service.similar_tasks()
 
 
+@tasks.route("/reports/tasks_opened_week")
+@print_func_name
+@jwt_required_and_not_blacklisted
+def tasks_opened_week():
+    return service.tasks_opened_week()
+
+
 @tasks.route("/reports/max_tasks_day")
 @print_func_name
 @jwt_required_and_not_blacklisted
@@ -103,4 +110,3 @@ def avg_tasks_per_day():
 @jwt_required_and_not_blacklisted
 def tasks_count_breakdown():
     return service.tasks_count_breakdown()
-
