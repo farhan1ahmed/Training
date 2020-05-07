@@ -190,7 +190,7 @@ def similar_tasks():
 
 def avg_tasks_per_day():
     user = get_jwt_identity()
-    completed_tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=3).count()
+    completed_tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=COMPLETED).count()
     first_task = TodoModel.query.filter_by(userID=user).order_by(TodoModel.CreationDate).first()
     if first_task is None:
         return Response("message: No tasks found", status=status_codes.NOT_FOUND, mimetype='application/json')
@@ -199,6 +199,6 @@ def avg_tasks_per_day():
     no_of_days = int((today - start_date.date()).days)
     avg_tasks_completed = completed_tasks / no_of_days
     resp_obj = dict()
-    resp_obj["Avg. Tasks Completed per day"] = avg_tasks_completed
+    resp_obj["avg_tasks"] = avg_tasks_completed
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
 
