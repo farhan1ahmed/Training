@@ -82,3 +82,25 @@ def similar_tasks():
 @jwt_required_and_not_blacklisted
 def most_tasks_day():
     return service.most_tasks_day()
+
+
+@tasks.route("/reports/late_tasks")
+@print_func_name
+@jwt_required_and_not_blacklisted
+def late_tasks():
+    return service.late_tasks()
+
+
+@tasks.route("/reports/avg_tasks_per_day")
+@print_func_name
+@jwt_required_and_not_blacklisted
+def avg_tasks_per_day():
+    return service.avg_tasks_per_day()
+
+
+@tasks.route("/reports/tasks_count_breakdown")
+@print_func_name
+@jwt_required_and_not_blacklisted
+def tasks_count_breakdown():
+    return service.tasks_count_breakdown()
+
