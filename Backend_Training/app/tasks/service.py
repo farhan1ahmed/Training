@@ -188,6 +188,23 @@ def similar_tasks():
     return Response(f'{{"message":"{message}"}}', status=status_codes.OK, mimetype='application/json')
 
 
+<<<<<<< HEAD
+def late_tasks():
+    user = get_jwt_identity()
+    tasks = TodoModel.query.filter_by(userID=user).all()
+    if len(tasks) == 0:
+        return Response("message: No tasks found", status=status_codes.NOT_FOUND, mimetype='application/json')
+    count = 0
+    for task in tasks:
+        if task.CompletionDate is None:
+            if task.DueDate.date() < datetime.date.today():
+                count = count + 1
+        elif task.DueDate.date() < task.CompletionDate.date():
+            count = count + 1
+    resp_obj = dict()
+    resp_obj["count"] = count
+    return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
+=======
 def avg_tasks_per_day():
     user = get_jwt_identity()
     completed_tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=COMPLETED).count()
@@ -218,3 +235,4 @@ def tasks_count_breakdown():
 
 
 
+>>>>>>> master
