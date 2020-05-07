@@ -199,6 +199,6 @@ def avg_tasks_per_day():
     no_of_days = int((today - start_date.date()).days)
     avg_tasks_completed = completed_tasks / no_of_days
     resp_obj = dict()
-    resp_obj["Avg. Tasks Completed per day"] = avg_tasks_completed
+    resp_obj["avg_tasks"] = avg_tasks_completed
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
 
