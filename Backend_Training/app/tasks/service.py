@@ -14,7 +14,8 @@ DUE_DATE = 'DueDate'
 STATUS = 'Status'
 STATUS_ID = 'Status_id'
 COMPLETED = 3
-
+CACHE_DICTIONARY = dict()
+BASE_URL = "localhost:5000/reports"
 
 def create(request_body):
     """ Creates a task with a unique title and stores it in to the database.
@@ -190,6 +191,11 @@ def similar_tasks():
 
 def tasks_opened_week():
     user = get_jwt_identity()
+    url_endpoint = BASE_URL + "/tasks_opened_week"
+    cached_response = cache_dictionary(user, url_endpoint)
+    if cached_response:
+        print("Cached")
+        return Response(json.dumps(cached_response), status=status_codes.OK, mimetype='application/json')
     tasks = TodoModel.query.filter_by(userID=user).all()
     if len(tasks) == 0:
         return Response("message: No tasks found", status=status_codes.NOT_FOUND, mimetype='application/json')
@@ -198,11 +204,18 @@ def tasks_opened_week():
         day = task.CreationDate.strftime("%A")
         if day in week:
             week[day] += 1
+    print("Non-Cached")
+    CACHE_DICTIONARY[user][url_endpoint] = [week, datetime.datetime.utcnow()]
     return Response(json.dumps(week), status=status_codes.OK, mimetype='application/json')
 
 
-def most_tasks_day():
+def max_tasks_day():
     user = get_jwt_identity()
+    url_endpoint = BASE_URL + "/max_tasks_day"
+    cached_response = cache_dictionary(user, url_endpoint)
+    if cached_response:
+        print("Cached")
+        return Response(json.dumps(cached_response), status=status_codes.OK, mimetype='application/json')
     tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=COMPLETED).all()
     if len(tasks) == 0:
         return Response("message: No tasks found", status=status_codes.NOT_FOUND, mimetype='application/json')
@@ -218,11 +231,18 @@ def most_tasks_day():
             resp_obj.setdefault("date", []).append(key)
         elif len(completed_task_dict.get(key)) == max_tasks:
             resp_obj.setdefault("date", []).append(key)
+    print("Non-Cached")
+    CACHE_DICTIONARY[user][url_endpoint] = [resp_obj, datetime.datetime.utcnow()]
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
 
 
 def late_tasks():
     user = get_jwt_identity()
+    url_endpoint = BASE_URL + "/late_tasks"
+    cached_response = cache_dictionary(user, url_endpoint)
+    if cached_response:
+        print("Cached")
+        return Response(json.dumps(cached_response), status=status_codes.OK, mimetype='application/json')
     tasks = TodoModel.query.filter_by(userID=user).all()
     if len(tasks) == 0:
         return Response("message: No tasks found", status=status_codes.NOT_FOUND, mimetype='application/json')
@@ -235,11 +255,18 @@ def late_tasks():
             count = count + 1
     resp_obj = dict()
     resp_obj["count"] = count
+    print("Non-Cached")
+    CACHE_DICTIONARY[user][url_endpoint] = [resp_obj, datetime.datetime.utcnow()]
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
 
 
 def avg_tasks_per_day():
     user = get_jwt_identity()
+    url_endpoint = BASE_URL + "/avg_tasks_per_day"
+    cached_response = cache_dictionary(user, url_endpoint)
+    if cached_response:
+        print("Cached")
+        return Response(json.dumps(cached_response), status=status_codes.OK, mimetype='application/json')
     completed_tasks = TodoModel.query.filter_by(userID=user).filter_by(Status_id=3).count()
     first_task = TodoModel.query.filter_by(userID=user).order_by(TodoModel.CreationDate).first()
     if first_task is None:
@@ -250,11 +277,18 @@ def avg_tasks_per_day():
     avg_tasks_completed = completed_tasks / no_of_days
     resp_obj = dict()
     resp_obj["avg_tasks"] = avg_tasks_completed
+    print("Non-Cached")
+    CACHE_DICTIONARY[user][url_endpoint] = [resp_obj, datetime.datetime.utcnow()]
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
 
 
 def tasks_count_breakdown():
     user = get_jwt_identity()
+    url_endpoint = BASE_URL + "/tasks_count_breakdown"
+    cached_response = cache_dictionary(user, url_endpoint)
+    if cached_response:
+        print("Cached")
+        return Response(json.dumps(cached_response), status=status_codes.OK, mimetype='application/json')
     total_tasks = TodoModel.query.filter_by(userID=user).count()
     if total_tasks == 0:
         return Response("message: No task found", status=status_codes.NOT_FOUND, mimetype='application/json')
@@ -264,4 +298,22 @@ def tasks_count_breakdown():
     resp_obj['total_tasks'] = total_tasks
     resp_obj['completed_tasks'] = completed_tasks
     resp_obj['remaining_tasks'] = remaining_tasks
+    print("Non-Cached")
+    CACHE_DICTIONARY[user][url_endpoint] = [resp_obj, datetime.datetime.utcnow()]
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
+
+
+def cache_dictionary(user, url):
+    user_dict = CACHE_DICTIONARY.get(user)
+    if user_dict:
+        if user_dict.get(url):
+            content = user_dict.get(url)[0]
+            last_time = user_dict.get(url)[1]
+            if (datetime.datetime.utcnow() - last_time).seconds <= 900:
+                return content
+            else:
+                del user_dict[url]
+                return None
+    else:
+        CACHE_DICTIONARY[user] = dict()
+        return None
