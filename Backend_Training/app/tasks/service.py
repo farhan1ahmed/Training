@@ -16,6 +16,12 @@ STATUS_ID = 'Status_id'
 COMPLETED = 3
 CACHE_DICTIONARY = dict()
 BASE_URL = "localhost:5000/reports"
+TASK_OPENED_WEEK_URL = BASE_URL + "/tasks_opened_week"
+MAX_TASKS_WEEK_URL = BASE_URL + "/max_tasks_day"
+LATE_TASKS_URL = BASE_URL + "/late_tasks"
+AVG_TASKS_URL = BASE_URL + "/avg_tasks_per_day"
+TASK_COUNT_BREAKDOWN = BASE_URL + "/tasks_count_breakdown"
+
 
 def create(request_body):
     """ Creates a task with a unique title and stores it in to the database.
@@ -36,15 +42,17 @@ def create(request_body):
         Raises:
             IntegrityError: If the Title of the task is not unique, the database refuses to add the new task.
     """
-
+    user = get_jwt_identity()
     due_date = get_date(request_body.get(DUE_DATE))
     task = TodoModel(Title=request_body.get(TITLE), Description=request_body.get(DESCRIPTION), DueDate=due_date,
-                     userID=get_jwt_identity(), Status_id=request_body.get(STATUS_ID))
+                     userID=user, Status_id=request_body.get(STATUS_ID))
     try:
         db.session.add(task)
         db.session.commit()
     except exc.IntegrityError as exception:
         return Response(f'{{"message": "{exception}"}}', status=status_codes.CONFLICT, mimetype='application/json')
+    affected_reports_url = [TASK_COUNT_BREAKDOWN, TASK_OPENED_WEEK_URL]
+    delete_cache(user, affected_reports_url)
     return Response('{"message":"success"}', status=status_codes.CREATED, mimetype='application/json')
 
 
@@ -97,6 +105,13 @@ def delete_item(item_id):
     task = TodoModel.query.filter_by(userID=user).filter_by(id=item_id).first()
     if task is None:
         return Response('{"message":"No such task exists."}', status=status_codes.NOT_FOUND, mimetype='application/json')
+    if task.Status_id == COMPLETED:
+        affected_reports_url = [TASK_COUNT_BREAKDOWN, AVG_TASKS_URL, LATE_TASKS_URL, MAX_TASKS_WEEK_URL,
+                                TASK_OPENED_WEEK_URL]
+        delete_cache(user, affected_reports_url)
+    else:
+        affected_reports_url = [TASK_COUNT_BREAKDOWN, LATE_TASKS_URL, TASK_OPENED_WEEK_URL]
+        delete_cache(user, affected_reports_url)
     db.session.delete(task)
     db.session.commit()
     return Response('{"message":"Task deleted successfully"}', status=status_codes.OK, mimetype='application/json')
@@ -111,10 +126,14 @@ def update_item(item_id, request_body):
         if attribute == DUE_DATE:
             due_date = get_date(request_body.get(DUE_DATE))
             setattr(task, attribute, due_date)
+            affected_reports_url = [LATE_TASKS_URL]
+            delete_cache(user, affected_reports_url)
         else:
             setattr(task, attribute, request_body.get(attribute))
-    if task.Status_id == COMPLETED:
+    if task.Status_id == COMPLETED and task.CompletionDate is None:
         task.CompletionDate = datetime.datetime.utcnow()
+        affected_reports_url = [TASK_COUNT_BREAKDOWN, AVG_TASKS_URL, LATE_TASKS_URL, MAX_TASKS_WEEK_URL]
+        delete_cache(user, affected_reports_url)
     try:
         db.session.commit()
     except exc.IntegrityError:
@@ -191,8 +210,7 @@ def similar_tasks():
 
 def tasks_opened_week():
     user = get_jwt_identity()
-    url_endpoint = BASE_URL + "/tasks_opened_week"
-    cached_response = cache_dictionary(user, url_endpoint)
+    cached_response = cache_dictionary(user, TASK_OPENED_WEEK_URL)
     if cached_response:
         print("Cached")
         return Response(json.dumps(cached_response), status=status_codes.OK, mimetype='application/json')
@@ -205,14 +223,13 @@ def tasks_opened_week():
         if day in week:
             week[day] += 1
     print("Non-Cached")
-    CACHE_DICTIONARY[user][url_endpoint] = [week, datetime.datetime.utcnow()]
+    CACHE_DICTIONARY[user][TASK_OPENED_WEEK_URL] = [week, datetime.datetime.utcnow()]
     return Response(json.dumps(week), status=status_codes.OK, mimetype='application/json')
 
 
 def max_tasks_day():
     user = get_jwt_identity()
-    url_endpoint = BASE_URL + "/max_tasks_day"
-    cached_response = cache_dictionary(user, url_endpoint)
+    cached_response = cache_dictionary(user, MAX_TASKS_WEEK_URL)
     if cached_response:
         print("Cached")
         return Response(json.dumps(cached_response), status=status_codes.OK, mimetype='application/json')
@@ -232,14 +249,13 @@ def max_tasks_day():
         elif len(completed_task_dict.get(key)) == max_tasks:
             resp_obj.setdefault("date", []).append(key)
     print("Non-Cached")
-    CACHE_DICTIONARY[user][url_endpoint] = [resp_obj, datetime.datetime.utcnow()]
+    CACHE_DICTIONARY[user][MAX_TASKS_WEEK_URL] = [resp_obj, datetime.datetime.utcnow()]
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
 
 
 def late_tasks():
     user = get_jwt_identity()
-    url_endpoint = BASE_URL + "/late_tasks"
-    cached_response = cache_dictionary(user, url_endpoint)
+    cached_response = cache_dictionary(user, LATE_TASKS_URL)
     if cached_response:
         print("Cached")
         return Response(json.dumps(cached_response), status=status_codes.OK, mimetype='application/json')
@@ -256,14 +272,13 @@ def late_tasks():
     resp_obj = dict()
     resp_obj["count"] = count
     print("Non-Cached")
-    CACHE_DICTIONARY[user][url_endpoint] = [resp_obj, datetime.datetime.utcnow()]
+    CACHE_DICTIONARY[user][LATE_TASKS_URL] = [resp_obj, datetime.datetime.utcnow()]
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
 
 
 def avg_tasks_per_day():
     user = get_jwt_identity()
-    url_endpoint = BASE_URL + "/avg_tasks_per_day"
-    cached_response = cache_dictionary(user, url_endpoint)
+    cached_response = cache_dictionary(user, AVG_TASKS_URL)
     if cached_response:
         print("Cached")
         return Response(json.dumps(cached_response), status=status_codes.OK, mimetype='application/json')
@@ -278,14 +293,13 @@ def avg_tasks_per_day():
     resp_obj = dict()
     resp_obj["avg_tasks"] = avg_tasks_completed
     print("Non-Cached")
-    CACHE_DICTIONARY[user][url_endpoint] = [resp_obj, datetime.datetime.utcnow()]
+    CACHE_DICTIONARY[user][AVG_TASKS_URL] = [resp_obj, datetime.datetime.utcnow()]
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
 
 
 def tasks_count_breakdown():
     user = get_jwt_identity()
-    url_endpoint = BASE_URL + "/tasks_count_breakdown"
-    cached_response = cache_dictionary(user, url_endpoint)
+    cached_response = cache_dictionary(user, TASK_COUNT_BREAKDOWN)
     if cached_response:
         print("Cached")
         return Response(json.dumps(cached_response), status=status_codes.OK, mimetype='application/json')
@@ -299,7 +313,7 @@ def tasks_count_breakdown():
     resp_obj['completed_tasks'] = completed_tasks
     resp_obj['remaining_tasks'] = remaining_tasks
     print("Non-Cached")
-    CACHE_DICTIONARY[user][url_endpoint] = [resp_obj, datetime.datetime.utcnow()]
+    CACHE_DICTIONARY[user][TASK_COUNT_BREAKDOWN] = [resp_obj, datetime.datetime.utcnow()]
     return Response(json.dumps(resp_obj), status=status_codes.OK, mimetype='application/json')
 
 
@@ -317,3 +331,13 @@ def cache_dictionary(user, url):
     else:
         CACHE_DICTIONARY[user] = dict()
         return None
+
+
+def delete_cache(user, url_list):
+    user_dict = CACHE_DICTIONARY.get(user)
+    if user_dict:
+        for url in url_list:
+            try:
+                del user_dict[url]
+            except KeyError:
+                continue
