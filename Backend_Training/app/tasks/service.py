@@ -3,6 +3,7 @@ from flask_jwt_extended import get_jwt_identity
 import datetime, os
 from .models import TodoModel
 from app import db
+from app import app
 from app.utils import status_codes
 from app.utils.date_parser import get_date
 from sqlalchemy import exc, not_
@@ -23,7 +24,7 @@ AVG_TASKS_URL = BASE_URL + "/avg_tasks_per_day"
 TASK_COUNT_BREAKDOWN = BASE_URL + "/tasks_count_breakdown"
 
 
-def create(request_body):
+def create_task(request_body):
     """ Creates a task with a unique title and stores it in to the database.
 
         The task is created as per the attributes defined by the user. The title
@@ -50,6 +51,7 @@ def create(request_body):
         db.session.add(task)
         db.session.commit()
     except exc.IntegrityError as exception:
+        app.logger.error("Exception occurred    " + __name__, exc_info=True)
         return Response(f'{{"message": "{exception}"}}', status=status_codes.CONFLICT, mimetype='application/json')
     affected_reports_url = [TASK_COUNT_BREAKDOWN, TASK_OPENED_WEEK_URL]
     delete_cache(user, affected_reports_url)
@@ -89,7 +91,6 @@ def get_paginated_list(user, start, limit):
         start_of_next_page= start + limit
         response_object['next'] = url + f'?start={start_of_next_page}&limit={limit}'
     return Response(json.dumps(response_object), status=status_codes.OK, mimetype='application/json')
-
 
 
 def list_item(item_id):
@@ -136,8 +137,9 @@ def update_item(item_id, request_body):
         delete_cache(user, affected_reports_url)
     try:
         db.session.commit()
-    except exc.IntegrityError:
-        return Response(f'{{"message": "{exc.IntegrityError}"}}', status=status_codes.CONFLICT,
+    except exc.IntegrityError as exception:
+        app.logger.error("Exception occurred    " + __name__, exc_info=True)
+        return Response(f'{{"message": "{exception}"}}', status=status_codes.CONFLICT,
                         mimetype='application/json')
     return Response('{"message":"Task updated successfully"}', status=status_codes.OK,
                     mimetype='application/json')
@@ -340,4 +342,5 @@ def delete_cache(user, url_list):
             try:
                 del user_dict[url]
             except KeyError:
+                app.logger.error("Exception occurred    " + __name__, exc_info=True)
                 continue

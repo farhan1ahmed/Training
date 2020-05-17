@@ -3,17 +3,19 @@ from flask_jwt_extended import verify_jwt_in_request
 from flask import request, Response
 from app.users.models import BlackList
 from app.utils import status_codes
+from app import app
+import inspect
 
 
 def print_func_name(fn):
     @wraps(fn)
     def printer(*args, **kwargs):
-        print(fn.__name__)
+        app.logger.info("ENDPOINT CALLED: " + fn.__name__ )
         return fn(*args, **kwargs)
     return printer
 
 
-#Decorator Function to verify JWT token and BlackList Table
+# Decorator Function to verify JWT token and BlackList Table
 def jwt_required_and_not_blacklisted(fn):
     @wraps(fn)
     def wrapper(*arg, **kwargs):

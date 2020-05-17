@@ -6,6 +6,7 @@ from flask_jwt_extended import JWTManager
 from apscheduler.schedulers.background import BackgroundScheduler
 import os
 import atexit
+import logging
 
 app = Flask(__name__)
 db = SQLAlchemy(app)
@@ -14,6 +15,14 @@ app.config.from_object(os.environ['APP_SETTINGS'])
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 jwt = JWTManager(app)
+
+logging.basicConfig(level=logging.DEBUG)
+file_handler = logging.FileHandler('todo.log')
+file_handler.setLevel(logging.INFO)
+file_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(file_format)
+logging.getLogger().addHandler(file_handler)
+
 
 from app.tasks.controllers import tasks
 from app.users.controllers import users
