@@ -22,6 +22,7 @@ from app import app, db, mail
 from app.utils import status_codes
 from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Message
+from smtplib import SMTPException
 
 
 SECRET_KEY = 'SECRET_KEY'
@@ -57,7 +58,12 @@ def send_confirmation_email(email):
     confirm_url = url_for('user.confirm_user', token=generate_email_token(email), _external=True)
     print(confirm_url)
     msg = Message(subject='ToDo App: Confirm your Email', body=confirm_url, recipients=[email], sender=app.config.get('DEFAULT_MAIL_SENDER'))
-    mail.send(msg)
+    try:
+        mail.send(msg)
+    except SMTPException as exception:
+        app.logger.error("Exception occurred    " + __name__, exc_info=True)
+        return Response(f'{{"message": "{exception}"}}', status=status_codes.SERVER_ERROR, mimetype='application/json')
+
 
 
 # User Registration/ Login / Confirm Email/ Logout
@@ -162,7 +168,11 @@ def send_password_reset_email(email):
     reset_url = url_for('user.reset_password', resettoken=generate_email_token(email), _external=True)
     msg = Message(subject='ToDo App: Password Reset', body=reset_url, recipients=[email],
                   sender=app.config.get('DEFAULT_MAIL_SENDER'))
-    mail.send(msg)
+    try:
+        mail.send(msg)
+    except SMTPException as exception:
+        app.logger.error("Exception occurred    " + __name__, exc_info=True)
+        return Response(f'{{"message": "{exception}"}}', status=status_codes.SERVER_ERROR, mimetype='application/json')
 
 
 def forgot_password(request_body):

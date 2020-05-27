@@ -11,7 +11,7 @@ def register_user():
     return service.register_user(request_body)
 
 
-@users.route("/login", methods=['GET', 'POST'])
+@users.route("/login", methods=['POST'])
 @print_func_name
 def login_user():
     request_body = request.get_json()
@@ -38,7 +38,7 @@ def confirm_user(token):
     return service.confirm_user(token, status)
 
 
-@users.route("/logout", methods=['GET', 'POST'])
+@users.route("/logout", methods=['GET'])
 @print_func_name
 @jwt_required_and_not_blacklisted
 def logout_user():

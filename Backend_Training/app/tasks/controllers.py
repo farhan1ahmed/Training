@@ -10,7 +10,7 @@ def hello():
     return "Hello! "
 
 
-@tasks.route("/create", methods=['GET', 'POST'])
+@tasks.route("/create", methods=['POST'])
 @print_func_name
 @jwt_required_and_not_blacklisted
 def create_task():
