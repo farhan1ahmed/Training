@@ -13,10 +13,9 @@ def hello():
 @tasks.route("/create", methods=['GET', 'POST'])
 @print_func_name
 @jwt_required_and_not_blacklisted
-def create():
+def create_task():
     request_body = request.get_json()
-    print(request_body)
-    return service.create(request_body)
+    return service.create_task(request_body)
 
 
 @tasks.route("/list_items/page")
