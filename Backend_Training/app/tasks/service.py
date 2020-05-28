@@ -290,7 +290,7 @@ def avg_tasks_per_day():
         return Response("message: No tasks found", status=status_codes.NOT_FOUND, mimetype='application/json')
     start_date = first_task.CreationDate
     today = datetime.date.today()
-    no_of_days = int((today - start_date.date()).days)
+    no_of_days = max(int((today - start_date.date()).days), 1)
     avg_tasks_completed = completed_tasks / no_of_days
     resp_obj = dict()
     resp_obj["avg_tasks"] = avg_tasks_completed
