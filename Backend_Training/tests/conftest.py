@@ -1,7 +1,7 @@
 import pytest
 import sys
 import os
-sys.path.append('C:\\Users\\hp\\PycharmProjects\\Training\\Backend_Training')
+sys.path.append(os.environ.get('UPPER_PACKAGE_PATH'))
 from app.users.models import UserModel
 from app.tasks.models import TodoModel
 from app.utils.date_parser import get_date
@@ -48,7 +48,6 @@ def test_client():
     client = test_app.test_client()
 
     with test_app.app_context():
-        from app.users.models import UserModel
         test_db.create_all()
         test_db.session.commit()
         test_user_1 = UserModel(username="Test_User_1", email="farhan1ahmed@hotmail.com", password="test123")
