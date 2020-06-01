@@ -11,7 +11,7 @@ import logging
 app = Flask(__name__)
 db = SQLAlchemy(app)
 
-app.config.from_object(os.environ['APP_SETTINGS'])
+app.config.from_object(os.environ.get('APP_SETTINGS'))
 bcrypt = Bcrypt(app)
 mail = Mail(app)
 jwt = JWTManager(app)
@@ -39,9 +39,7 @@ if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
     mail_scheduler.add_job(mail_reminder, trigger='interval', days=1, start_date='2020-01-01 00:00:00')
     mail_scheduler.start()
 
+    def shutdown(): mail_scheduler.shutdown(wait=False)
 
-def shutdown(): mail_scheduler.shutdown(wait=False)
-
-
-atexit.register(shutdown)
+    atexit.register(shutdown)
 

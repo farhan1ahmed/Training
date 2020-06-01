@@ -84,7 +84,6 @@ def register_user(request_body):
 
 def login_user(request_body):
     user = UserModel.query.filter_by(email=request_body.get(EMAIL)).first()
-    print(user)
     credentials_proved = check_password_hash(user.password, request_body.get(PASSWORD))
 
     if not credentials_proved:
