@@ -1,7 +1,7 @@
 import os
 class BaseConfig(object):
     DEBUG = True
-    SERVER_NAME = 'localhost:5000'
+    #SERVER_NAME = 'localhost:5000'
     SESSION_COOKIE_DOMAIN = False
     SECRET_KEY = os.environ.get('SECRET_KEY')
     PASSWORD_SALT = os.environ.get('PASSWORD_SALT')
